@@ -71,6 +71,9 @@ node {
             }
         }
 
+        def rootDir = pwd()
+        def util = load "${rootDir}@script/tools/jenkins/util.groovy"
+
         stage('Build') {
             if (params['Clean Build']) {
                 echo "Clean build, removing build folder"
@@ -120,7 +123,7 @@ node {
         }
 
         def display = 0           
-        nicecmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
+        util.cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
             sh '''
                 rc=0
                 for unittest in inviwo-unittests-*
