@@ -1,30 +1,6 @@
-@NonCPS
-def getChangeString() {
-    MAX_MSG_LEN = 100
-    def changeString = ""
-
-    echo "Gathering SCM changes"
-    def changeLogSets = currentBuild.rawBuild.changeSets
-    for (int i = 0; i < changeLogSets.size(); i++) {
-        def entries = changeLogSets[i].items
-        for (int j = 0; j < entries.length; j++) {
-            def entry = entries[j]
-            truncated_msg = entry.msg.take(MAX_MSG_LEN)
-            changeString += "${new Date(entry.timestamp).format("yyyy-MM-dd HH:mm:ss")} "
-            changeString += "[${entry.commitId.take(8)}] ${entry.author}: ${truncated_msg}\n"
-        }
-    }
-
-    if (!changeString) {
-        changeString = " - No new changes"
-    }
-    return changeString
-}
-
 node {
     try {
         stage('Fetch') { 
-            echo "Building inviwo Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
             dir('inviwo') {
                 checkout scm
                 sh 'git submodule sync --recursive' // needed when a submodule has a new url  
@@ -33,7 +9,7 @@ node {
         }
 
         def rootDir = pwd()
-        def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"        
+        def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"
         
         properties(util.defaultProperties())
 
@@ -148,19 +124,6 @@ node {
         currentBuild.result = 'FAILURE'
         throw e
     } finally {
-        stage('Slack') {
-            echo "result: ${currentBuild.result}"
-            def res2color = ['SUCCESS' : 'good', 'UNSTABLE' : 'warning' , 'FAILURE' : 'danger' ]
-            def color = res2color.containsKey(currentBuild.result) ? res2color[currentBuild.result] : 'warning'
-            slackSend(
-                color: color, 
-                channel: "#jenkins-branch-pr", 
-                message: "Inviwo branch: ${env.BRANCH_NAME}\n" + \
-                         "Status: ${currentBuild.result}\n" + \
-                         "Job: ${env.BUILD_URL} \n" + \
-                         "Regression: ${env.JOB_URL}Regression_Report/\n" + \
-                         "Changes: " + getChangeString() 
-            )
-        }
+        slack(currentBuild, env)
     }
 }
