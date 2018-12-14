@@ -61,6 +61,64 @@ def cmd(stageName, dirName, env = [], fun) {
     }
 }
 
+def unittest(display) {
+    util.cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
+        sh '''
+            rc=0
+            for unittest in inviwo-unittests-*
+                do echo ==================================
+                echo Running: ${unittest}
+                ./${unittest} || rc=$?
+            done
+            exit ${rc}
+        '''
+    }
+}
+
+def integrationtest(display) {
+    util.cmd('Integration Tests', 'build/bin', ['DISPLAY=:' + display]) {
+        sh './inviwo-integrationtests'
+    }
+}
+
+def regression(build, display, env) {
+    util.cmd('Regression Tests', 'regress', ['DISPLAY=:' + display]) {
+        try {
+            sh """
+                python3 ../inviwo/tools/regression.py \
+                        --inviwo ../build/bin/inviwo \
+                        --header ${env.JENKINS_HOME}/inviwo-config/header.html \
+                        --output . \
+                        --repos ../inviwo
+            """
+        } catch (e) {
+            // Mark as unstable, if we mark as failed, the report will not be published.
+            build.result = 'UNSTABLE'
+        }
+    }
+}
+
+def publish() {
+    stage('Publish') {
+        publishHTML([
+            allowMissing: true,
+            alwaysLinkToLastBuild: true,
+            keepAll: false,
+            reportDir: 'regress',
+            reportFiles: 'report.html',
+            reportName: 'Regression Report'
+        ])
+        publishHTML([
+            allowMissing: true,
+            alwaysLinkToLastBuild: true,
+            keepAll: false,
+            reportDir: 'build/doc/inviwo/html',
+            reportFiles: 'index.html',
+            reportName: 'Doxygen Documentation'
+        ])
+    }
+}
+
 def slack(build, env) {
     stage('Slack') {
         echo "result: ${build.result}"

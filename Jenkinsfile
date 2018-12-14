@@ -62,36 +62,9 @@ node {
         }
 
         def display = 0           
-        util.cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
-            sh '''
-                rc=0
-                for unittest in inviwo-unittests-*
-                    do echo ==================================
-                    echo Running: ${unittest}
-                    ./${unittest} || rc=$?
-                done
-                exit ${rc}
-            '''    
-        }
-
-        util.cmd('Integration Tests', 'build/bin', ['DISPLAY=:' + display]) {
-            sh './inviwo-integrationtests'
-        }
-        
-        try {
-            util.cmd('Regression Tests', 'regress', ['DISPLAY=:' + display]) {
-                sh """
-                    python3 ../inviwo/tools/regression.py \
-                            --inviwo ../build/bin/inviwo \
-                            --header ${env.JENKINS_HOME}/inviwo-config/header.html \
-                            --output . \
-                            --repos ../inviwo
-                """
-            }
-        } catch (e) {
-            // Mark as unstable, if we mark as failed, the report will not be published.
-            currentBuild.result = 'UNSTABLE'
-        }
+        util.unittest(display)
+        util.integrationtest(display)        
+        util.regression(currentBuild, display, env)
 
         util.cmd('Copyright Check', 'inviwo') {
             sh 'python3 tools/refactoring/check-copyright.py .'
@@ -101,29 +74,13 @@ node {
             sh 'ninja DOXY-ALL'
         }
         
-        stage('Publish') {
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: false,
-                reportDir: 'regress',
-                reportFiles: 'report.html',
-                reportName: 'Regression Report'
-            ])
-            publishHTML([
-                allowMissing: true,
-                alwaysLinkToLastBuild: true,
-                keepAll: false,
-                reportDir: 'build/doc/inviwo/html',
-                reportFiles: 'index.html',
-                reportName: 'Doxygen Documentation'
-            ])
-        }
+        util.publish()
+
         currentBuild.result = 'SUCCESS'
     } catch (e) {
         currentBuild.result = 'FAILURE'
         throw e
     } finally {
-        slack(currentBuild, env)
+        util.slack(currentBuild, env)
     }
 }
