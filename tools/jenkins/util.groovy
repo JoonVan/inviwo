@@ -163,7 +163,9 @@ def cmake(opts, onModules, offModules, indent = 4) {
 def build(opts, onModules, offModules = [], indent = 4) {
     dir('build') {
         def cmakestr = cmake(opts, onModules, offModules, indent)
-        log sh 'echo ${cmakestr}'
+        log {
+            sh 'echo ${cmakestr}'
+        }
 
         log {
             sh """
