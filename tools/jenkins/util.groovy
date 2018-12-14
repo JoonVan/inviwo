@@ -61,8 +61,8 @@ def cmd(stageName, dirName, env = [], fun) {
     }
 }
 
-def unittest() {
-    cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + "0"]) {
+def unittest(display) {
+    cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
         sh '''
             rc=0
             for unittest in inviwo-unittests-*
@@ -96,6 +96,18 @@ def regression(build, display, env) {
             build.result = 'UNSTABLE'
         }
     }
+}
+
+def copyright() {
+    util.cmd('Copyright Check', 'inviwo') {
+        sh 'python3 tools/refactoring/check-copyright.py .'
+    }    
+}
+
+def doxygen(display) {
+    util.cmd('Doxygen', 'build', ['DISPLAY=:' + display]) {
+        sh 'ninja DOXY-ALL'
+    }    
 }
 
 def publish() {
@@ -135,5 +147,39 @@ def slack(build, env) {
         )
     }
 }
+
+def onModules = ["ABUFFERGL" , "ANIMATION", "ANIMATIONQT"]
+def offModules = ["HDF5" , "DISCRETEDATA"]
+def opts = ["CMAKE_BUILD_TYPE" : "Relase", "OpenCL_LIBRARY" : "/usr/local/cuda/lib64/libOpenCL.so"]
+
+def cmake(opts, onModules, offModules, indent = 4) {
+    return "cmake -G Ninja -LA \\\\\n" +
+        opts.inject("", {res, item -> res + " " * indent + item.key + "=" + item.value + " \\\\\n"}) + 
+        onModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=ON \\\\\n"}) +
+        offModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=OFF \\\\\n"}) + 
+        "    ../inviwo"
+}
+
+def build(opts, onModules, offModules = [], indent = 4) {
+    dir('build') {
+        def cmakestr = cmake(opts, onModules, offModules, indent)
+        log {
+            sh """
+                ccache -z # reset ccache statistics
+                # tell ccache where the project root is
+                export CPATH=`pwd`
+                export CCACHE_BASEDIR=`readlink -f \${CPATH}/..`
+                        
+                ${cmakestr}
+
+                ninja
+
+                ccache -s # print ccache statistics
+            """
+        }
+    }    
+}
+
+
 
 return this

@@ -1,82 +1,47 @@
 node {
-    try {
-        stage('Fetch') { 
-            dir('inviwo') {
-                checkout scm
-                sh 'git submodule sync --recursive' // needed when a submodule has a new url  
-                sh 'git submodule update --init --recursive'
-            }
+    stage('Fetch') { 
+        dir('inviwo') {
+            checkout scm
+            sh 'git submodule sync --recursive' // needed when a submodule has a new url  
+            sh 'git submodule update --init --recursive'
         }
+    }
+    def rootDir = pwd()
+    def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"      
+    properties(util.defaultProperties())
 
-        def rootDir = pwd()
-        def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"
-        
-        properties(util.defaultProperties())
-
+    try {
         stage('Build') {
             if (params['Clean Build']) {
                 echo "Clean build, removing build folder"
                 sh "rm -r build"
             }
-            dir('build') {
-                util.log {
-                    sh """
-                        ccache -z # reset ccache statistics
-                        # tell ccache where the project root is
-                        export CPATH=`pwd`
-                        export CCACHE_BASEDIR=`readlink -f \${CPATH}/..`
-                        
-                        cmake -G \"Ninja\" -LA \
-                              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-                              -DCMAKE_BUILD_TYPE=${params['Build Type']} \
-                              -DOpenCL_LIBRARY=/usr/local/cuda/lib64/libOpenCL.so  \
-                              -DOpenCL_INCLUDE_DIR=/usr/local/cuda/include/ \
-                              -DCMAKE_PREFIX_PATH=/opt/Qt/5.6/gcc_64 \
-                              -DIVW_CMAKE_DEBUG=ON \
-                              -DIVW_DOXYGEN_PROJECT=ON \
-                              -DBUILD_SHARED_LIBS=ON \
-                              -DIVW_MODULE_GLFW=ON \
-                              -DIVW_TINY_GLFW_APPLICATION=ON \
-                              -DIVW_TINY_QT_APPLICATION=ON \
-                              -DIVW_MODULE_ABUFFERGL=ON \
-                              -DIVW_MODULE_ANIMATION=ON \
-                              -DIVW_MODULE_ANIMATIONQT=ON \
-                              -DIVW_MODULE_PLOTTING=ON \
-                              -DIVW_MODULE_PLOTTINGGL=ON \
-                              -DIVW_MODULE_POSTPROCESSING=ON \
-                              -DIVW_MODULE_USERINTERFACEGL=ON \
-                              -DIVW_MODULE_HDF5=ON \
-                              -DIVW_MODULE_DISCRETEDATA=ON \
-                              -DIVW_UNITTESTS=ON \
-                              -DIVW_UNITTESTS_RUN_ON_BUILD=OFF \
-                              -DIVW_INTEGRATION_TESTS=ON \
-                              -DIVW_RUNTIME_MODULE_LOADING=ON \
-                              ../inviwo
-
-                        ninja
-
-                        ccache -s # print ccache statistics
-                    """
-                }
-            }
+            def opts = [
+                "CMAKE_CXX_COMPILER_LAUNCHER" : "ccache",
+                "CMAKE_BUILD_TYPE" : params['Build Type'],
+                "OpenCL_LIBRARY" : "/usr/local/cuda/lib64/libOpenCL.so",
+                "OpenCL_INCLUDE_DIR" : "/usr/local/cuda/include/",
+                "CMAKE_PREFIX_PATH" : "/opt/Qt/5.6/gcc_64",
+                "IVW_CMAKE_DEBUG" : "ON",
+                "IVW_DOXYGEN_PROJECT" : "ON",
+                "BUILD_SHARED_LIBS" : "ON",
+                "IVW_TINY_GLFW_APPLICATION" : "ON",
+                "IVW_TINY_QT_APPLICATION" : "ON",
+                "IVW_UNITTESTS" : "ON",
+                "IVW_UNITTESTS_RUN_ON_BUILD" : "OFF",
+                "IVW_INTEGRATION_TESTS" : "ON",
+                "IVW_RUNTIME_MODULE_LOADING" : "ON"
+            ]
+            def onModules = ["ABUFFERGL" , "DISCRETEDATA", "GLFW", "HDF5"]
+            util.build(opts, onModules)
         }
 
         def display = 0       
-
-        util.unittest()
-        
+        util.unittest(display)
         util.integrationtest(display)        
-        
         util.regression(currentBuild, display, env)
-
-        util.cmd('Copyright Check', 'inviwo') {
-            sh 'python3 tools/refactoring/check-copyright.py .'
-        }
-        
-        util.cmd('Doxygen', 'build', ['DISPLAY=:' + display]) {
-            sh 'ninja DOXY-ALL'
-        }
-        
+        util.copyright()
+        util.doxygen(display)       
         util.publish()
 
         currentBuild.result = 'SUCCESS'
