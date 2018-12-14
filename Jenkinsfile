@@ -35,23 +35,7 @@ node {
         def rootDir = pwd()
         def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"        
         
-        properties([
-            parameters([
-                booleanParam(
-                    defaultValue: false, 
-                    description: 'Do a clean build', 
-                    name: 'Clean Build'
-                ),
-                choice(
-                    choices: "Release\nDebug\nMinSizeRel\nRelWithDebInfo\n", // The first will be default
-                    description: 'Select build configuration', 
-                    name: 'Build Type'
-                )
-            ]),
-            pipelineTriggers([
-                [$class: 'GitHubPushTrigger']
-            ])
-        ])
+        properties(util.defaultProperties())
 
         stage('Build') {
             if (params['Clean Build']) {
