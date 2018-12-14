@@ -72,7 +72,7 @@ node {
         }
 
         def rootDir = pwd()
-        def util = load "${rootDir}@script/tools/jenkins/util.groovy"
+        def util = load "${rootDir}/tools/jenkins/util.groovy"
 
         stage('Build') {
             if (params['Clean Build']) {
