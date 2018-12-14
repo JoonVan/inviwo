@@ -61,8 +61,8 @@ def cmd(stageName, dirName, env = [], fun) {
     }
 }
 
-def unittest(display) {
-    cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
+def unittest() {
+    cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + "0"]) {
         sh '''
             rc=0
             for unittest in inviwo-unittests-*

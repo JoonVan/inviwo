@@ -63,7 +63,7 @@ node {
 
         def display = 0       
 
-        util.unittest(display)
+        util.unittest()
         
         util.integrationtest(display)        
         
