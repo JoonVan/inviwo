@@ -21,27 +21,6 @@ def getChangeString() {
     return changeString
 }
 
-def nicelog(env = [], fun) {
-    withEnv(['TERM=xterm'] + env) {
-        ansiColor {
-            timestamps {
-                fun()
-            }
-        }
-    }
-}
-
-def nicecmd(stageName, dirName, env = [], fun) {
-    stage(stageName) {
-        dir(dirName) {
-            nicelog(env) {
-                fun()
-            }
-        }
-    }
-}
-
-
 node {
     try {
         stage('Fetch') { 
@@ -80,7 +59,7 @@ node {
                 sh "rm -r build"
             }
             dir('build') {
-                nicelog {
+                util.log {
                     sh """
                         ccache -z # reset ccache statistics
                         # tell ccache where the project root is
@@ -135,12 +114,12 @@ node {
             '''    
         }
 
-        nicecmd('Integration Tests', 'build/bin', ['DISPLAY=:' + display]) {
+        util.cmd('Integration Tests', 'build/bin', ['DISPLAY=:' + display]) {
             sh './inviwo-integrationtests'
         }
         
         try {
-            nicecmd('Regression Tests', 'regress', ['DISPLAY=:' + display]) {
+            util.cmd('Regression Tests', 'regress', ['DISPLAY=:' + display]) {
                 sh """
                     python3 ../inviwo/tools/regression.py \
                             --inviwo ../build/bin/inviwo \
@@ -154,11 +133,11 @@ node {
             currentBuild.result = 'UNSTABLE'
         }
 
-        nicecmd('Copyright Check', 'inviwo') {
+        util.cmd('Copyright Check', 'inviwo') {
             sh 'python3 tools/refactoring/check-copyright.py .'
         }
         
-        nicecmd('Doxygen', 'build', ['DISPLAY=:' + display]) {
+        util.cmd('Doxygen', 'build', ['DISPLAY=:' + display]) {
             sh 'ninja DOXY-ALL'
         }
         
