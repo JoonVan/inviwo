@@ -61,9 +61,12 @@ node {
             }
         }
 
-        def display = 0           
+        def display = 0       
+
         util.unittest(display)
+        
         util.integrationtest(display)        
+        
         util.regression(currentBuild, display, env)
 
         util.cmd('Copyright Check', 'inviwo') {

@@ -62,7 +62,7 @@ def cmd(stageName, dirName, env = [], fun) {
 }
 
 def unittest(display) {
-    util.cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
+    cmd('Unit Tests', 'build/bin', ['DISPLAY=:' + display]) {
         sh '''
             rc=0
             for unittest in inviwo-unittests-*
@@ -76,13 +76,13 @@ def unittest(display) {
 }
 
 def integrationtest(display) {
-    util.cmd('Integration Tests', 'build/bin', ['DISPLAY=:' + display]) {
+    cmd('Integration Tests', 'build/bin', ['DISPLAY=:' + display]) {
         sh './inviwo-integrationtests'
     }
 }
 
 def regression(build, display, env) {
-    util.cmd('Regression Tests', 'regress', ['DISPLAY=:' + display]) {
+    cmd('Regression Tests', 'regress', ['DISPLAY=:' + display]) {
         try {
             sh """
                 python3 ../inviwo/tools/regression.py \
@@ -135,7 +135,5 @@ def slack(build, env) {
         )
     }
 }
-
-
 
 return this
