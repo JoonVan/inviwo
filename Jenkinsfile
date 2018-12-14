@@ -43,24 +43,6 @@ def nicecmd(stageName, dirName, env = [], fun) {
 
 
 node {
-    properties([
-        parameters([
-            booleanParam(
-                defaultValue: false, 
-                description: 'Do a clean build', 
-                name: 'Clean Build'
-            ),
-            choice(
-                choices: "Release\nDebug\nMinSizeRel\nRelWithDebInfo\n", // The first will be default
-                description: 'Select build configuration', 
-                name: 'Build Type'
-            )
-        ]),
-        pipelineTriggers([
-            [$class: 'GitHubPushTrigger']
-        ])
-    ])
-    
     try {
         stage('Fetch') { 
             echo "Building inviwo Running ${env.BUILD_ID} on ${env.JENKINS_URL}"
@@ -72,7 +54,25 @@ node {
         }
 
         def rootDir = pwd()
-        def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"
+        def util = load "${rootDir}/inviwo/tools/jenkins/util.groovy"        
+        
+        properties([
+            parameters([
+                booleanParam(
+                    defaultValue: false, 
+                    description: 'Do a clean build', 
+                    name: 'Clean Build'
+                ),
+                choice(
+                    choices: "Release\nDebug\nMinSizeRel\nRelWithDebInfo\n", // The first will be default
+                    description: 'Select build configuration', 
+                    name: 'Build Type'
+                )
+            ]),
+            pipelineTriggers([
+                [$class: 'GitHubPushTrigger']
+            ])
+        ])
 
         stage('Build') {
             if (params['Clean Build']) {
