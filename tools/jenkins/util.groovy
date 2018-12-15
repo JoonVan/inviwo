@@ -164,7 +164,7 @@ def build(opts, onModules, offModules = [], indent = 4) {
     dir('build') {
         def cmakestr = cmake(opts, onModules, offModules, indent)
         log {
-            sh 'echo ${cmakestr}'
+            sh 'echo ${cmake(opts, onModules, offModules, indent)}'
         }
 
         log {
@@ -174,7 +174,7 @@ def build(opts, onModules, offModules = [], indent = 4) {
                 export CPATH=`pwd`
                 export CCACHE_BASEDIR=`readlink -f \${CPATH}/..`
                         
-                ${cmakestr}
+                ${cmake(opts, onModules, offModules, indent)}
 
                 ninja
 
