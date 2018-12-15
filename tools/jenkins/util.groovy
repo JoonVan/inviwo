@@ -99,13 +99,13 @@ def regression(build, display, env) {
 }
 
 def copyright() {
-    util.cmd('Copyright Check', 'inviwo') {
+    cmd('Copyright Check', 'inviwo') {
         sh 'python3 tools/refactoring/check-copyright.py .'
     }    
 }
 
 def doxygen(display) {
-    util.cmd('Doxygen', 'build', ['DISPLAY=:' + display]) {
+    cmd('Doxygen', 'build', ['DISPLAY=:' + display]) {
         sh 'ninja DOXY-ALL'
     }    
 }
@@ -154,9 +154,9 @@ def opts = ["CMAKE_BUILD_TYPE" : "Relase", "OpenCL_LIBRARY" : "/usr/local/cuda/l
 
 def cmake(opts, onModules, offModules, indent = 4) {
     return "cmake -G Ninja -LA " +
-        opts.inject("", {res, item -> res + " " * indent + item.key + "=" + item.value + ""}) + 
-        onModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=ON "}) +
-        offModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=OFF "}) + 
+        opts.inject("", {res, item -> res + " " * indent + "-D" + item.key + "=" + item.value + ""}) + 
+        onModules.inject("", {res, item -> res + " " * indent + "-D" + "IVW_MODULE_" + item + "=ON "}) +
+        offModules.inject("", {res, item -> res + " " * indent + "-D" + "IVW_MODULE_" + item + "=OFF "}) + 
         "    ../inviwo"
 }
 
