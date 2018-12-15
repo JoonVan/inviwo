@@ -153,10 +153,10 @@ def offModules = ["HDF5" , "DISCRETEDATA"]
 def opts = ["CMAKE_BUILD_TYPE" : "Relase", "OpenCL_LIBRARY" : "/usr/local/cuda/lib64/libOpenCL.so"]
 
 def cmake(opts, onModules, offModules, indent = 4) {
-    return "cmake -G Ninja -LA \\\\\n" +
-        opts.inject("", {res, item -> res + " " * indent + item.key + "=" + item.value + " \\\\\n"}) + 
-        onModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=ON \\\\\n"}) +
-        offModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=OFF \\\\\n"}) + 
+    return "cmake -G Ninja -LA " +
+        opts.inject("", {res, item -> res + " " * indent + item.key + "=" + item.value + ""}) + 
+        onModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=ON "}) +
+        offModules.inject("", {res, item -> res + " " * indent + "IVW_MODULE_" + item + "=OFF "}) + 
         "    ../inviwo"
 }
 
